@@ -82,7 +82,7 @@ def generate(directory_path):
 			count = 0
 			missing = False
 			dirs = directories
-			direcs = dirs.sort()
+			dirs = dirs.sort()
 			for directory in directories:
 				directory_num = int(directory)
 				if directory_num != count:
@@ -112,15 +112,74 @@ def generate(directory_path):
 				generate_pads(directory_path+'/')
 		break
 
+def sanity_check(message):
+	''' (String) -> Boolean
 
-#def send():
+	sanity_check('Hello')
+	>>> True
+	'''
+	if len(message) <= 2000:
+		return True
+	return False
 
+def get_pad(directory_path):
+	''' (String) -> String
 
+	get_pad()
+	>>> '0000/00c'
+	'''
+	for root, directories, folders in walk(directory_path):
+		dirs = directories
+		dirs = dirs.sort()
+		for directory in directories:
+			for path, repo, files in walk(directory_path+directory):
+				f = files
+				f = f.sort()
+				for file in files:
+					if 'c' in file:
+						return directory_path+directory+'/'+file
+		exit('No pads available, generate a new folder ...')
+		
+def encrypt_text(text):
+	''' (String) -> list of binaries
 
-#def receive():
+	>>> ecnrypt_message('Hello!')
+	0110100001100101011011000110110001101111001000010010001100100011001000110010001100100011
+	'''
+	return ''.join([format(ord(i), "08b") for i in text])
 
+def send(args):
+	''' (String, String) -> NoneType
 
+	send(Nonetype, NoneType)
+	>>>
+	'''
+	text = ""
+	if args.file != None:
+		file = open(args.file, 'r')
+		text = file.read()
+	elif args.text != None:
+		text = args.text
+	else:
+		text = input('Enter text to encrypt : ')
+	if sanity_check(text):
+		pad = get_pad(args.directory)
+		original_pad = pad
+		encrypted_text = encrypt_text(text)
+		prefix_file = open(pad[:-1]+'p', 'r')
+		prefix = prefix_file.read()
+		suffix_file = open(pad[:-1]+'s', 'r')
+		suffix = suffix_file.read()
+		pad = pad[:-1]+'t'
+		pad = pad.split('/')
+		writer = open(pad[0]+'-'+pad[1]+'-'+pad[2], 'w')
+		writer.write(str(prefix)+str(encrypted_text)+str(suffix))
+		subprocess.call(['shred', '-u', original_pad], shell = False)
+	else:
+		exit('The message can not fit in the pad')
 
+def receive():
+	py = 0
 
 def todo():
 	''' (NoneType) -> NoneType
@@ -130,13 +189,15 @@ def todo():
 	'''
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-d', dest = 'directory', required = True)
-	parser.add_argument('-g', dest = 'generate')
-	parser.add_argument('-s', dest = 'send')
-	parser.add_argument('-r', dest = 'receive')
+	parser.add_argument('-g', dest = 'generate', action = 'store_true')
+	parser.add_argument('-s', dest = 'send', action = 'store_true')
+	parser.add_argument('-f', dest = 'file')
+	parser.add_argument('-t', dest = 'text')
+	parser.add_argument('-r', dest = 'receive', action = 'store_true')
 	args = parser.parse_args()
-	if args.send != None:
-		send()
-	elif args.receive != None:
+	if args.send != False:
+		send(args)
+	elif args.receive != False:
 		receive()
 	else:
 		generate(args.directory)
