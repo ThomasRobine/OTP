@@ -17,7 +17,9 @@ def check_interface():
 			file = open("/sys/class/net/"+directory+"/operstate", 'r')
 			for state in file:
 				if state == 'up\n':
+					file.close()
 					exit('Network interface is up, now exiting ...')
+			file.close()
 	
 
 def create_file(file_path, bytes):
@@ -39,6 +41,7 @@ def create_file(file_path, bytes):
 		random = os.urandom(1)
 		random_list.append(bin(ord(random))[2:].zfill(8))
 	writer.write(''.join(random_list))
+	writer.close()
 
 def generate_pads(directory_path):
 	''' (String) -> NoneType
@@ -208,6 +211,7 @@ def send(args):
 	if args.file != None:
 		file = open(args.file, 'r')
 		text = file.read()
+		file.close()
 	elif args.text != None:
 		text = args.text
 	else:
@@ -216,6 +220,7 @@ def send(args):
 		pad_path = get_pad(args.directory)
 		pad_file = open(pad_path, 'r')
 		pad_value = pad_file.read()
+		pad_file.close()
 		pad_needed = get_pad_needed(text_to_binary(text), pad_value)
 		print('pad needed :', pad_needed)
 		pad_bytes = get_bytes(pad_needed)
@@ -231,18 +236,74 @@ def send(args):
 		original_pad = pad_path
 		prefix_file = open(pad_path[:-1]+'p', 'r')
 		prefix = prefix_file.read()
+		prefix_file.close()
 		suffix_file = open(pad_path[:-1]+'s', 'r')
 		suffix = suffix_file.read()
+		suffix_file.close()
 		pad_path = pad_path[:-1]+'t'
 		pad_path = pad_path.split('/')
 		writer = open(pad_path[0]+'-'+pad_path[1]+'-'+pad_path[2], 'w')
 		writer.write(str(prefix)+str(''.join(binary_encrypted_text))+str(suffix))
+		writer.close()
 		subprocess.call(['shred', '-u', original_pad], shell = False)
 	else:
 		exit('The message can not fit in the pad')
 
-def receive():
-	py = 0
+
+def get_encrypted_text(prefix, text, suffix):
+	''' (String, String, String) -> String
+
+	get_encrypted_text('Bonjour', 'Bonjour comment allez-vous aujourd'hui', 'aujourd'hui')
+	>>> ' comment allez-vous '
+	'''
+	return text[len(prefix):-len(suffix)]
+
+
+def decrypt(text, pad):
+	''' (list of int, list of int) -> String
+
+	decrypt()
+	>>>
+	'''
+	return ''.join(chr((text[i]-pad[i])%256) for i in range(len(text)))
+
+def receive(args):
+	''' () -> NoneType
+
+	receive(args)
+	>>>
+	'''
+	if args.transmission == None:
+		exit('Transmission is not part of the input, now exiting ...')
+	else :
+		directory_path = args.transmission[:-4]
+		directory_path = directory_path.split('-')
+		directory_path = directory_path[0]+'/'+directory_path[1]+'/'
+		pad_number = args.transmission.split('-')[2][:-1]
+		file_prefix = open(directory_path+pad_number+'p', 'r')
+		prefix_key = file_prefix.read()
+		file_prefix.close()
+		file_pad = open(directory_path+pad_number+'c', 'r')
+		pad_key = file_pad.read()
+		file_pad.close()
+		file_suffix = open(directory_path+pad_number+'s', 'r')
+		suffix_key = file_suffix.read()
+		file_suffix.close()
+		transmission_file = open(args.transmission, 'r')
+		encrypted_text = transmission_file.read()
+		transmission_file.close()
+		encrypted_text = get_encrypted_text(prefix_key, encrypted_text, suffix_key)
+		pad_key = get_pad_needed(encrypted_text, pad_key)
+		text_bytes = get_bytes(encrypted_text)
+		pad_bytes = get_bytes(pad_key)
+		text_b10 = bytes_to_b10(text_bytes)
+		pad_b10 = bytes_to_b10(pad_bytes)
+		text = decrypt(text_b10, pad_b10)
+		writer = open(args.transmission[:-1]+'m', 'w')
+		writer.write(text)
+		writer.close()
+		subprocess.call(['shred', '-u', args.transmission], shell = False)
+		subprocess.call(['shred', '-u', directory_path+pad_number+'c'], shell = False)
 
 def todo():
 	''' (NoneType) -> NoneType
@@ -262,7 +323,7 @@ def todo():
 	if args.send != False:
 		send(args)
 	elif args.receive != False:
-		receive()
+		receive(args)
 	else:
 		generate(args.directory)
 
