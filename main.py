@@ -74,12 +74,10 @@ def generate(directory_path):
 	generate('Directories/')
 	>>>
 	'''
-	print('zero')
-	print(directory_path)
+	if not os.path.exists(directory_path):
+		subprocess.call(['mkdir', '--', directory_path], shell = False)
 	for root, directories, files in walk(directory_path):
-		prtin('zero et demi')
 		if len(directories) == 0:
-			print('1st')
 			subprocess.call(['mkdir', '--', directory_path+'0000'], shell = False)
 			generate_pads(directory_path+'0000/')
 		else:
@@ -190,8 +188,6 @@ def encrypt_text(text, pad):
 	encrypt_text([15, 4, 25, 25, 34], [12, 23, 26, 54, 76])
 	>>> [229, 229, 55, 167, 146]
 	'''
-	print(len(text))
-	print(len(pad))
 	return [(text[i]+pad[i])%256 for i in range(len(text))]
 
 def int_to_binary(encrypted_text):
@@ -264,13 +260,10 @@ def todo():
 	parser.add_argument('-r', dest = 'receive', action = 'store_true')
 	args = parser.parse_args()
 	if args.send != False:
-		print('send')
 		send(args)
 	elif args.receive != False:
-		print("receive")
 		receive()
 	else:
-		print('generate')
 		generate(args.directory)
 
 if __name__ == "__main__":
