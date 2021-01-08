@@ -6,7 +6,7 @@ Self-contained tool in Python that can be used for secure messaging.
 
 The tool is able to apply a One-Time Pad cipher to a given message.
 
-Don't forget to copy the generate files to have the copy needed to decrypt the encrypted message.
+Don't forget to copy the generated files to have the copy needed to decrypt the encrypted message.
 
 # Launch program
 
