@@ -7,7 +7,7 @@ import subprocess
 
 
 def check_interface():
-	''' (NoneType) -> NoneType
+	''' (NoneType) -> Boolean
 
 	>>> check_interface()
 	Network interface is up, now exiting ...
@@ -18,8 +18,9 @@ def check_interface():
 			for state in file:
 				if state == 'up\n':
 					file.close()
-					exit('Network interface is up, now exiting ...')
+					return True
 			file.close()
+		return False
 	
 
 def create_file(file_path, bytes):
@@ -74,7 +75,7 @@ def generate_pads(directory_path):
 def generate(directory_path):
 	''' (String) -> NoneType
 
-	generate('Directories/')
+	generate('Directories/0000/00c, ...')
 	>>>
 	'''
 	if not os.path.exists(directory_path):
@@ -201,6 +202,17 @@ def int_to_binary(encrypted_text):
 	'''
 	return [format(i, "08b") for i in encrypted_text]
 
+def get_file_content(path):
+	''' (String) -> String
+
+	get_file_content('Directories_sender/0000/00c')
+	>>> '0101011101000101010001101100...'
+	'''
+	file = open(path, 'r')
+	content = file.read()
+	file.close()
+	return content
+
 def send(args):
 	''' (String, String) -> NoneType
 
@@ -218,28 +230,16 @@ def send(args):
 		text = input('Enter text to encrypt : ')
 	if sanity_check(text):
 		pad_path = get_pad(args.directory)
-		pad_file = open(pad_path, 'r')
-		pad_value = pad_file.read()
-		pad_file.close()
+		pad_value = get_file_content(pad_path)
 		pad_needed = get_pad_needed(text_to_binary(text), pad_value)
-		print('pad needed :', pad_needed)
 		pad_bytes = get_bytes(pad_needed)
-		print('pad bytes :', pad_bytes)
 		pad_b10 = bytes_to_b10(pad_bytes)
-		print('pad b10 :', pad_b10)
 		text_ascii = get_ascii(text)
-		print('text ascii :', text_ascii)
 		encrypted_text = encrypt_text(text_ascii, pad_b10)
-		print('encrypted text :', encrypted_text)
 		binary_encrypted_text = int_to_binary(encrypted_text)
-		print('binary encrypted text :', binary_encrypted_text)
 		original_pad = pad_path
-		prefix_file = open(pad_path[:-1]+'p', 'r')
-		prefix = prefix_file.read()
-		prefix_file.close()
-		suffix_file = open(pad_path[:-1]+'s', 'r')
-		suffix = suffix_file.read()
-		suffix_file.close()
+		prefix = get_file_content(pad_path[:-1]+'p')
+		suffix = get_file_content(pad_path[:-1]+'s')
 		pad_path = pad_path[:-1]+'t'
 		pad_path = pad_path.split('/')
 		writer = open(pad_path[0]+'-'+pad_path[1]+'-'+pad_path[2], 'w')
@@ -280,18 +280,10 @@ def receive(args):
 		directory_path = directory_path.split('-')
 		directory_path = directory_path[0]+'/'+directory_path[1]+'/'
 		pad_number = args.transmission.split('-')[2][:-1]
-		file_prefix = open(directory_path+pad_number+'p', 'r')
-		prefix_key = file_prefix.read()
-		file_prefix.close()
-		file_pad = open(directory_path+pad_number+'c', 'r')
-		pad_key = file_pad.read()
-		file_pad.close()
-		file_suffix = open(directory_path+pad_number+'s', 'r')
-		suffix_key = file_suffix.read()
-		file_suffix.close()
-		transmission_file = open(args.transmission, 'r')
-		encrypted_text = transmission_file.read()
-		transmission_file.close()
+		prefix_key = get_file_content(directory_path+pad_number+'p')
+		pad_key = get_file_content(directory_path+pad_number+'c')
+		suffix_key = get_file_content(directory_path+pad_number+'s')
+		encrypted_text = get_file_content(args.transmission)
 		encrypted_text = get_encrypted_text(prefix_key, encrypted_text, suffix_key)
 		pad_key = get_pad_needed(encrypted_text, pad_key)
 		text_bytes = get_bytes(encrypted_text)
@@ -305,11 +297,24 @@ def receive(args):
 		subprocess.call(['shred', '-u', args.transmission], shell = False)
 		subprocess.call(['shred', '-u', directory_path+pad_number+'c'], shell = False)
 
-def todo():
+def todo(args):
 	''' (NoneType) -> NoneType
 
 	todo()
 	>>>
+	'''
+	if args.send != False:
+		send(args)
+	elif args.receive != False:
+		receive(args)
+	else:
+		generate(args.directory)
+
+if __name__ == "__main__":
+	'''
+	if check_interface() :
+		exit()
+	else:
 	'''
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-d', dest = 'directory', required = True)
@@ -320,13 +325,4 @@ def todo():
 	parser.add_argument('-t', dest = 'text')
 	parser.add_argument('-r', dest = 'receive', action = 'store_true')
 	args = parser.parse_args()
-	if args.send != False:
-		send(args)
-	elif args.receive != False:
-		receive(args)
-	else:
-		generate(args.directory)
-
-if __name__ == "__main__":
-	#check_interface()
-	todo()
+	todo(args)
