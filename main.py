@@ -318,7 +318,7 @@ if __name__ == "__main__":
 	else:
 	'''
 	parser = argparse.ArgumentParser(description = 'Encrypt a text or decrypt a text')
-	parser.add_argument('-d', dest = 'directory', required = True, help = 'The directory path must be the first argument, mandatory')
+	parser.add_argument('directory',  help = 'Directory that will store the pads, mandatory')
 	parser.add_argument('--transmission', dest = 'transmission', help = 'The transmission file must be the second argument in a decrypt case, optional')
 	parser.add_argument('-r', dest = 'receive', action = 'store_true', help = 'receive mode : -d directory_path --transmission transmission_file -r, optional')
 	parser.add_argument('-s', dest = 'send', action = 'store_true', help = 'send mode : -d directory_path -s [-f file_path] [-t "some text"] .\nIf neither [-f] nor [-t] are specified, the text to be encrypted will be read from terminal entry, optional')
