@@ -273,8 +273,9 @@ def receive(args):
 	receive(args)
 	>>>
 	'''
-	if args.transmission == None:
-		exit('Transmission is not part of the input, now exiting ...')
+	if args.transmission == None or args.transmission[len(args.transmission)-2:] != 't':
+		subprocess.call(['python3 main.py', '-h'], shell = True)
+		exit('Transmission is not part of the input or has not the right format')
 	else :
 		directory_path = args.transmission[:-4]
 		directory_path = directory_path.split('-')
@@ -316,13 +317,13 @@ if __name__ == "__main__":
 		exit()
 	else:
 	'''
-	parser = argparse.ArgumentParser()
-	parser.add_argument('-d', dest = 'directory', required = True)
-	parser.add_argument('--transmission', dest = 'transmission')
-	parser.add_argument('-g', dest = 'generate', action = 'store_true')
-	parser.add_argument('-s', dest = 'send', action = 'store_true')
-	parser.add_argument('-f', dest = 'file')
-	parser.add_argument('-t', dest = 'text')
-	parser.add_argument('-r', dest = 'receive', action = 'store_true')
+	parser = argparse.ArgumentParser(description = 'Encrypt a text or decrypt a text')
+	parser.add_argument('-d', dest = 'directory', required = True, help = 'The directory path must be the first argument, mandatory')
+	parser.add_argument('--transmission', dest = 'transmission', help = 'The transmission file must be the second argument in a decrypt case, optional')
+	parser.add_argument('-r', dest = 'receive', action = 'store_true', help = 'receive mode : -d directory_path --transmission transmission_file -r, optional')
+	parser.add_argument('-s', dest = 'send', action = 'store_true', help = 'send mode : -d directory_path -s [-f file_path] [-t "some text"] .\nIf either [-f] nor [-t] are specified, the text to be encrypted will be read from terminal entry, optional')
+	parser.add_argument('-f', dest = 'file', help = 'File from where the text to be encrypted is : -f filepath')
+	parser.add_argument('-t', dest = 'text', help = 'Text to be encrypted : -t "some text"')
+	parser.add_argument('-g', dest = 'generate', action = 'store_true', help = 'generate mode : -d directory_path -g . If none of [-s, -r, -g] is specified, default mode will be set on generate mode, optional')
 	args = parser.parse_args()
 	todo(args)
